@@ -46,6 +46,11 @@ namespace FrontBlazor_AppiGenericaCsharp.Services
 
                 return new List<Dictionary<string, object?>>();
             }
+            catch (JsonException ex)
+            {
+                Console.WriteLine($"Error al listar {tabla}: {ex.Message}");
+                return new List<Dictionary<string, object?>>();
+            }
             catch (HttpRequestException ex)
             {
                 Console.WriteLine($"Error al listar {tabla}: {ex.Message}");
