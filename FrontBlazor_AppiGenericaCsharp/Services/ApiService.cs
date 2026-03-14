@@ -36,7 +36,19 @@ namespace FrontBlazor_AppiGenericaCsharp.Services
                 if (limite.HasValue)
                     url += $"?limite={limite.Value}";
 
-                var respuesta = await _http.GetFromJsonAsync<JsonElement>(url, _jsonOptions);
+                var response = await _http.GetAsync(url);
+
+                // Si la respuesta no es correcta devuelve lista vacia
+                if (!response.IsSuccessStatusCode)
+                    return new List<Dictionary<string, object?>>();
+
+                var contenido = await response.Content.ReadAsStringAsync();
+
+                // Si la API devuelve vacio (sin JSON) evita el error
+                if (string.IsNullOrWhiteSpace(contenido))
+                    return new List<Dictionary<string, object?>>();
+
+                var respuesta = JsonSerializer.Deserialize<JsonElement>(contenido, _jsonOptions);
 
                 // Extrae la propiedad "datos" de la respuesta
                 if (respuesta.TryGetProperty("datos", out JsonElement datos))
@@ -169,9 +181,6 @@ namespace FrontBlazor_AppiGenericaCsharp.Services
 
         // ──────────────────────────────────────────────
         // METODO AUXILIAR: Convierte JsonElement a lista de diccionarios
-        // La API devuelve los datos como JSON generico, este metodo
-        // lo transforma a Dictionary<string, object?> para trabajar
-        // facilmente con @foreach y @bind en Blazor
         // ──────────────────────────────────────────────
         private List<Dictionary<string, object?>> ConvertirDatos(JsonElement datos)
         {
@@ -183,7 +192,6 @@ namespace FrontBlazor_AppiGenericaCsharp.Services
 
                 foreach (var propiedad in fila.EnumerateObject())
                 {
-                    // Convierte cada valor JSON a su tipo .NET correspondiente
                     diccionario[propiedad.Name] = propiedad.Value.ValueKind switch
                     {
                         JsonValueKind.String => propiedad.Value.GetString(),
